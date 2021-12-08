@@ -1,0 +1,8 @@
+Vasher cannot be categorized
+love cannot be categorized
+sky is categorized as: [PLACE, Sky, Noun, | noun: The upper atmosphere of the earth]
+Vivienna cannot be categorized
+maybe is categorized as: [Undrst, If, LY, | adverb: Perhaps.]
+I cannot be categorized
+hate cannot be categorized
+hunger is categorized as: [Negativ, Ngtv, NatrPro, WlbPhys, WlbTot, Noun, |]
