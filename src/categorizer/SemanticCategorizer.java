@@ -38,6 +38,7 @@ public class SemanticCategorizer {
 	// private float totalCatFreq = 0; 
 	private long totalTokens = 0; // Total number of tokens in dataset
 	private ArrayList<String> uncategorizableWords;
+	private String fileEnding;
 	
 	/**
 	 * Constructs a SemanticCategorizer, which categories
@@ -46,8 +47,9 @@ public class SemanticCategorizer {
 	 * 
 	 * @param fileToCategorize
 	 */
-	public SemanticCategorizer(String fileToCategorize) {
+	public SemanticCategorizer(String fileToCategorize, String fileEnding) {
 		categorizationDict = new HashMap<String, ArrayList<String>>();
+		this.fileEnding = fileEnding;
 		
 		createDictionary();
 		buildFrequencyList(fileToCategorize);
@@ -173,7 +175,7 @@ public class SemanticCategorizer {
 	 * and outputs the categorization list for each lemma in category_by_word.txt
 	 */
 	private void categorizeFrequencyList() {
-		File output = new File("data/category_by_word.txt");
+		File output = new File("data/category_by_word_" + fileEnding + ".txt");
 		categoryFrequencies = new HashMap<String, Integer>();
 		uncategorizableWords = new ArrayList<>();
 		
@@ -218,7 +220,7 @@ public class SemanticCategorizer {
 	 * Note that these percentages will not add up to 100% due to overlap between categories
 	 */
 	private void getCategoryPercentages() {
-		File output = new File("data/percentages.txt");
+		File output = new File("data/percentages_" + fileEnding + ".txt");
 		
 		try {
 			PrintWriter writer = new PrintWriter(output);
@@ -275,7 +277,7 @@ public class SemanticCategorizer {
 	}
 	
 	public static void main(String[] args) {
-		SemanticCategorizer tester = new SemanticCategorizer("data/warbreaker-processed.txt");
+		SemanticCategorizer tester = new SemanticCategorizer("data/coca_text_fic_2008_first60.txt", "COCA");
 		// tester.printCategorizations();
 		// System.out.println(tester.getFreqList());
 		// tester.printCategoryFrequencies();
