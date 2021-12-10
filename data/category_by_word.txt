@@ -1,8 +1,8 @@
-Vasher cannot be categorized
-love cannot be categorized
-sky is categorized as: [PLACE, Sky, Noun, | noun: The upper atmosphere of the earth]
-Vivienna cannot be categorized
-maybe is categorized as: [Undrst, If, LY, | adverb: Perhaps.]
-I cannot be categorized
-hate cannot be categorized
-hunger is categorized as: [Negativ, Ngtv, NatrPro, WlbPhys, WlbTot, Noun, |]
+love is categorized as: [AffTot, AffGain, Pstv, SV, Pleasur, Passive, Affil, EMOT, Strong, Positiv, Active, AffOth, SocRel, IAV]
+sky is categorized as: [PLACE, Sky]
+vasher cannot be categorized
+maybe is categorized as: [Undrst, If]
+i is categorized as: [Self]
+hate is categorized as: [SV, Passive, Arousal, Negativ, NegAff, EVAL, EMOT, Ngtv, Hostile]
+vivienna cannot be categorized
+hunger is categorized as: [Negativ, Ngtv, NatrPro, WlbPhys, WlbTot]

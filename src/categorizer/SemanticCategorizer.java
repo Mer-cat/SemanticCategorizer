@@ -4,27 +4,35 @@ import java.io.*;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Properties;
+import java.util.Set;
 
 import edu.stanford.nlp.ling.*;
 import edu.stanford.nlp.pipeline.*;
 
+/**
+ * Uses the Harvard Inquirer Semantic Categorization dictionary to characterize the words
+ * of a given input file 
+ * 
+ * Outputs two files: category_by_word and percentages, which reflects percentage of words that fit a given category
+ * (with overlap between categories)
+ * 
+ * @author Mercy Bickell
+ *
+ */
 public class SemanticCategorizer {
-	// Make hashmap mapping from each dictionary word to list of their categories (since 1 word can have multiple categories)
-	// Iterate over txt file, tokenizing, lemmatizing, and lowercasing
-	// Make freqlist from words in txt file
-	// For each word in freq list, look it up in the hashmap 
-	// Build output.txt by listing word, its frequency in the input file, and its semantic categories
-	// Get totals by category
 	
-	private HashMap<String, ArrayList<String>> categorizationDict;
-	private ArrayList<String> categories;
-	private HashMap<String, Integer> freqList;
-	private HashMap<String, Integer> categoryFrequencies;
-	private float totalCatFreq = 0;
+	private HashMap<String, ArrayList<String>> categorizationDict; // Maps from dictionary words to list of its categorizations
+	private ArrayList<String> categories; // List of Harvard categories
+	private HashMap<String, Integer> freqList; // Maps from each unique word in data to how many times that word appears
+	private HashMap<String, Integer> categoryFrequencies; // Maps from category to how many tokens are categorized as that category
+	// private float totalCatFreq = 0; 
+	private long totalTokens = 0; // Total number of tokens in dataset
 	
 	/**
 	 * Constructs a SemanticCategorizer, which categories
@@ -52,21 +60,35 @@ public class SemanticCategorizer {
 			String line = br.readLine(); // First line is categories
 			makeCategories(line);
 			
-			line = br.readLine(); // Second line is counts each category
+			line = br.readLine(); // Second line is counts for each category
 			storeCatCounts(line);
 			
 			// Dictionary entries begin on 3rd line
 			line = br.readLine();
+			String previousWord = "";
 			
 			while (line != null) {
-				// TODO: Handle things like "About#1" and "About#2"
+				
 				String[] row = line.split(",");
 				String word = row[0].toLowerCase();
-				ArrayList<String> categorizedAs = new ArrayList<>(Arrays.asList(row).subList(2, row.length));
+				// Check to see if word has multiple definitions
+				if (word.matches(".*#[0-9]+$")) {
+					word = word.split("#")[0];
+				}
+				
+				List<String> wholeList = Arrays.asList(row);
+				// Cut off at size of ca
+				ArrayList<String> categorizedAs = new ArrayList<>(wholeList.subList(2, categories.size() + 2));
+				// System.out.println(word + ": " + categorizedAs);
 				categorizedAs.removeAll(Arrays.asList("", null)); // Remove empty entries
-				// System.out.println(word);
-				// System.out.println(categorizedAs);
-				categorizationDict.put(word, categorizedAs);
+
+				// If this is not the first/only definition
+				if (word.equals(previousWord)) {
+					categorizationDict.put(word, getUnionOfLists(categorizationDict.get(word), categorizedAs));
+				} else {
+					categorizationDict.put(word, categorizedAs);
+				}
+				previousWord = word;
 				line = br.readLine();
 			}
 			
@@ -75,6 +97,15 @@ public class SemanticCategorizer {
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
+	}
+	
+	private ArrayList<String> getUnionOfLists(List<String> list1, List<String> list2) {
+		
+		Set<String> set = new HashSet<>();
+		set.addAll(list1);
+		set.addAll(list2);
+		
+		return new ArrayList<String>(set);
 	}
 	
 	/**
@@ -86,7 +117,9 @@ public class SemanticCategorizer {
 		categories = new ArrayList<>(Arrays.asList(catArray));
 		categories.remove(0); // Remove "Entry"
 		categories.remove(0); // Remove "Source"
-		// Note that last two entries are "Other tags" and "Defined," not real categories
+		// Remove "Other tags" and "Defined"
+		categories.remove(categories.size()-1);
+		categories.remove(categories.size()-1);
 	}
 	
 	private void storeCatCounts(String line) {
@@ -103,6 +136,7 @@ public class SemanticCategorizer {
 		freqList = new HashMap<String, Integer>();
 		
 		try {
+			// TODO: UTF-8 encoding? 
 			BufferedReader br = new BufferedReader(new FileReader(fileName));
 			
 			String line = br.readLine();
@@ -113,13 +147,15 @@ public class SemanticCategorizer {
 				StanfordCoreNLP pipeline = new StanfordCoreNLP(props);
 				CoreDocument document = pipeline.processToCoreDocument(line);
 		
+				// TODO: Figure out what's happening to the untokenizable stuff
 				for (CoreLabel token : document.tokens()) {
-					String word = token.lemma();
+					String word = token.lemma().toLowerCase();
 					if (freqList.containsKey(word)) {
 						freqList.put(word, freqList.get(word) + 1);
 					} else {
 						freqList.put(word, 1);
 					}
+					totalTokens = totalTokens + 1;
 				}
 
 				line = br.readLine();
@@ -146,13 +182,18 @@ public class SemanticCategorizer {
 		try {
 			PrintWriter writer = new PrintWriter(output);
 			
+			// For every unique word from the data
 			for (String word : freqList.keySet()) {
+				// Grab the categorizations for that word
 				ArrayList<String> cats = categorizationDict.get(word);
 				if (cats != null) {
+					// For each category in that list, go through and 
+					// add increase that category's frequency by the 
+					// number of times of the word appears
 					for (String cat : cats) {
 						if (categories.contains(cat)) {
-							categoryFrequencies.put(cat, categoryFrequencies.get(cat) + 1);
-							totalCatFreq = totalCatFreq + 1;
+							categoryFrequencies.put(cat, categoryFrequencies.get(cat) + (1*freqList.get(word)));
+							// totalCatFreq = totalCatFreq + 1;
 						}
 					}
 					writer.println(word + " is categorized as: " + cats);
@@ -171,7 +212,7 @@ public class SemanticCategorizer {
 	/**
 	 * Calculates the percentage of the text that fit a certain category per category
 	 * and outputs these percentages in percentages.txt
-	 * TODO: Some categories are subcategories. How could I deal with this?
+	 * Note that these percentages will not add up to 100% due to overlap between categories
 	 */
 	private void getCategoryPercentages() {
 		File output = new File("data/percentages.txt");
@@ -180,7 +221,8 @@ public class SemanticCategorizer {
 			PrintWriter writer = new PrintWriter(output);
 		
 			for (String cat : categories) {
-				float decimal = (float) categoryFrequencies.get(cat) / totalCatFreq;
+				// Number of words in sample matching the category / number of words in sample
+				float decimal = (float) categoryFrequencies.get(cat) / totalTokens;
 				float percentage = 100 * decimal;
 				writer.println(percentage + "% " + cat);
 			}
@@ -221,7 +263,8 @@ public class SemanticCategorizer {
 	}
 	
 	public static void main(String[] args) {
-		SemanticCategorizer tester = new SemanticCategorizer("data/test.txt");
+		// TODO: convert PDF to txt 
+		SemanticCategorizer tester = new SemanticCategorizer("data/warbreaker-nofrontmatter.pdf");
 		// tester.printCategorizations();
 		tester.printFreqList();
 		// tester.printCategoryFrequencies();
