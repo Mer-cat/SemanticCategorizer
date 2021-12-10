@@ -1,6 +1,10 @@
 package categorizer;
 
 import java.io.*;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.FileSystems;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -33,6 +37,7 @@ public class SemanticCategorizer {
 	private HashMap<String, Integer> categoryFrequencies; // Maps from category to how many tokens are categorized as that category
 	// private float totalCatFreq = 0; 
 	private long totalTokens = 0; // Total number of tokens in dataset
+	private ArrayList<String> uncategorizableWords;
 	
 	/**
 	 * Constructs a SemanticCategorizer, which categories
@@ -61,7 +66,6 @@ public class SemanticCategorizer {
 			makeCategories(line);
 			
 			line = br.readLine(); // Second line is counts for each category
-			storeCatCounts(line);
 			
 			// Dictionary entries begin on 3rd line
 			line = br.readLine();
@@ -122,10 +126,6 @@ public class SemanticCategorizer {
 		categories.remove(categories.size()-1);
 	}
 	
-	private void storeCatCounts(String line) {
-		// TODO if needed, store counts for overall rarity
-	}
-	
 	/**
 	 * Lemmatizes words from file, then
 	 * builds freqList of words from the given file
@@ -136,8 +136,8 @@ public class SemanticCategorizer {
 		freqList = new HashMap<String, Integer>();
 		
 		try {
-			// TODO: UTF-8 encoding? 
-			BufferedReader br = new BufferedReader(new FileReader(fileName));
+			Path path = FileSystems.getDefault().getPath(fileName);
+			BufferedReader br = Files.newBufferedReader(path, StandardCharsets.UTF_8);
 			
 			String line = br.readLine();
 			
@@ -147,7 +147,7 @@ public class SemanticCategorizer {
 				StanfordCoreNLP pipeline = new StanfordCoreNLP(props);
 				CoreDocument document = pipeline.processToCoreDocument(line);
 		
-				// TODO: Figure out what's happening to the untokenizable stuff
+				// Untokenizable words get dropped
 				for (CoreLabel token : document.tokens()) {
 					String word = token.lemma().toLowerCase();
 					if (freqList.containsKey(word)) {
@@ -175,6 +175,8 @@ public class SemanticCategorizer {
 	private void categorizeFrequencyList() {
 		File output = new File("data/category_by_word.txt");
 		categoryFrequencies = new HashMap<String, Integer>();
+		uncategorizableWords = new ArrayList<>();
+		
 		for (String category : categories) {
 			categoryFrequencies.put(category, 0);
 		}
@@ -198,6 +200,7 @@ public class SemanticCategorizer {
 					}
 					writer.println(word + " is categorized as: " + cats);
 				} else {
+					uncategorizableWords.add(word);
 					writer.println(word + " cannot be categorized");
 				}
 			}
@@ -234,6 +237,10 @@ public class SemanticCategorizer {
 		}
 	}
 	
+	public ArrayList<String> getUncategorizableWords() {
+		return uncategorizableWords;
+	}
+	
 	/**
 	 * Prints out the categorization dictionary
 	 */
@@ -249,10 +256,15 @@ public class SemanticCategorizer {
 	}
 	
 	/**
-	 * Prints frequency list of lemmas
+	 * Get frequency list of lemmas
+	 * @return freqList
 	 */
-	public void printFreqList() {
-		System.out.println(freqList);
+	public HashMap<String, Integer> getFreqList() {
+		return freqList;
+	}
+	
+	public long getTotalTokens() {
+		return totalTokens;
 	}
 	
 	/**
@@ -263,11 +275,13 @@ public class SemanticCategorizer {
 	}
 	
 	public static void main(String[] args) {
-		// TODO: convert PDF to txt 
-		SemanticCategorizer tester = new SemanticCategorizer("data/warbreaker-nofrontmatter.pdf");
+		SemanticCategorizer tester = new SemanticCategorizer("data/warbreaker-processed.txt");
 		// tester.printCategorizations();
-		tester.printFreqList();
+		// System.out.println(tester.getFreqList());
 		// tester.printCategoryFrequencies();
+		System.out.println("There were " + tester.getTotalTokens() + " total tokens in the given corpus");
+		System.out.println("There are " + tester.getUncategorizableWords().size() + " uncategorizable lemmas");
+		System.out.println("There are " + tester.getFreqList().size() + " total lemmas" );
 	}
 
 }
