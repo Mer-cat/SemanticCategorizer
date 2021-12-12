@@ -37,8 +37,9 @@ public class SemanticCategorizer {
 	private HashMap<String, Integer> categoryFrequencies; // Maps from category to how many tokens are categorized as that category
 	// private float totalCatFreq = 0; 
 	private long totalTokens = 0; // Total number of tokens in dataset
-	private ArrayList<String> uncategorizableWords;
+	private ArrayList<String> uncategorizableLemmas;
 	private String fileEnding;
+	private long totalUncategorizableTokens = 0;
 	
 	/**
 	 * Constructs a SemanticCategorizer, which categories
@@ -177,7 +178,7 @@ public class SemanticCategorizer {
 	private void categorizeFrequencyList() {
 		File output = new File("data/category_by_word_" + fileEnding + ".txt");
 		categoryFrequencies = new HashMap<String, Integer>();
-		uncategorizableWords = new ArrayList<>();
+		uncategorizableLemmas = new ArrayList<>();
 		
 		for (String category : categories) {
 			categoryFrequencies.put(category, 0);
@@ -196,13 +197,13 @@ public class SemanticCategorizer {
 					// number of times of the word appears
 					for (String cat : cats) {
 						if (categories.contains(cat)) {
-							categoryFrequencies.put(cat, categoryFrequencies.get(cat) + (1*freqList.get(word)));
-							// totalCatFreq = totalCatFreq + 1;
+							categoryFrequencies.put(cat, categoryFrequencies.get(cat) + freqList.get(word));
 						}
 					}
 					writer.println(word + " is categorized as: " + cats);
 				} else {
-					uncategorizableWords.add(word);
+					uncategorizableLemmas.add(word);
+					totalUncategorizableTokens += freqList.get(word);
 					writer.println(word + " cannot be categorized");
 				}
 			}
@@ -216,7 +217,7 @@ public class SemanticCategorizer {
 	
 	/**
 	 * Calculates the percentage of the text that fit a certain category per category
-	 * and outputs these percentages in percentages.txt
+	 * and outputs these percentages in the output file with some other info
 	 * Note that these percentages will not add up to 100% due to overlap between categories
 	 */
 	private void getCategoryPercentages() {
@@ -224,12 +225,21 @@ public class SemanticCategorizer {
 		
 		try {
 			PrintWriter writer = new PrintWriter(output);
+			writer.println("Total tokens: " + getTotalTokens());
+			writer.println("Total uncategorizable tokens: " + getTotalUncategorizableTokens());
+			writer.println("Total categorized tokens: " + (getTotalTokens() - getTotalUncategorizableTokens()));
+			writer.println("Total lemmas: " + getFreqList().size());
+			writer.println("Total uncategorizable lemmas: " + getUncategorizableLemmas().size());
+			writer.println("Total categorized lemmas: " + (getFreqList().size() - getUncategorizableLemmas().size()));
+			writer.println("\n");
+			writer.println("Category\tPercentage\tTokens");
 		
 			for (String cat : categories) {
 				// Number of words in sample matching the category / number of words in sample
-				float decimal = (float) categoryFrequencies.get(cat) / totalTokens;
+				int catTokens = categoryFrequencies.get(cat);
+				float decimal = (float) catTokens / totalTokens;
 				float percentage = 100 * decimal;
-				writer.println(percentage + "% " + cat);
+				writer.println(cat + "\t" + percentage + "%" + "\t" + catTokens);
 			}
 		
 			writer.close();
@@ -239,8 +249,20 @@ public class SemanticCategorizer {
 		}
 	}
 	
-	public ArrayList<String> getUncategorizableWords() {
-		return uncategorizableWords;
+	/**
+	 * @return uncategorizableLemmas A list of the lemmas that couldn't be
+	 * categorized according to the Harvard dict
+	 */
+	public ArrayList<String> getUncategorizableLemmas() {
+		return uncategorizableLemmas;
+	}
+	
+	/**
+	 * @return totalUncategorizableTokens the total number of tokens
+	 * that could not be categorized according to the Harvard dict
+	 */
+	public long getTotalUncategorizableTokens() {
+		return totalUncategorizableTokens;
 	}
 	
 	/**
@@ -254,7 +276,6 @@ public class SemanticCategorizer {
 			ArrayList<String> categorizedAs = mapElement.getValue();
 			System.out.println(word + " : " + categorizedAs);
 		}
-		
 	}
 	
 	/**
@@ -265,6 +286,12 @@ public class SemanticCategorizer {
 		return freqList;
 	}
 	
+	/**
+	 * Give total tokens in sample, excluding untokenizables 
+	 * but including uncategorizable tokens
+	 * 
+	 * @return totalTokens
+	 */
 	public long getTotalTokens() {
 		return totalTokens;
 	}
@@ -277,12 +304,13 @@ public class SemanticCategorizer {
 	}
 	
 	public static void main(String[] args) {
-		SemanticCategorizer tester = new SemanticCategorizer("data/coca_text_fic_2008_first60.txt", "COCA");
-		// tester.printCategorizations();
-		// System.out.println(tester.getFreqList());
-		// tester.printCategoryFrequencies();
+		SemanticCategorizer tester = new SemanticCategorizer("data/warbreaker-processed.txt", "warbreaker");
+
 		System.out.println("There were " + tester.getTotalTokens() + " total tokens in the given corpus");
-		System.out.println("There are " + tester.getUncategorizableWords().size() + " uncategorizable lemmas");
+		System.out.println("There were " + tester.getTotalUncategorizableTokens() + " uncategorizable tokens in the given corpus");
+		System.out.println("There were " + (tester.getTotalTokens() - tester.getTotalUncategorizableTokens())
+				+ " total categorizable tokens in the corpus");
+		System.out.println("There are " + tester.getUncategorizableLemmas().size() + " uncategorizable lemmas");
 		System.out.println("There are " + tester.getFreqList().size() + " total lemmas" );
 	}
 
