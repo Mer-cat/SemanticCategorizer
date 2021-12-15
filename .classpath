@@ -3,7 +3,7 @@
 	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER/org.eclipse.jdt.internal.debug.ui.launcher.StandardVMType/JavaSE-1.8"/>
 	<classpathentry kind="src" path="src"/>
 	<classpathentry kind="lib" path="C:/Users/merki/Downloads/stanford-corenlp-4.3.2-models-english.jar"/>
-	<classpathentry kind="lib" path="C:/Users/merki/OneDrive/Documents/College/stanford-corenlp-latest/stanford-corenlp-4.3.2/stanford-corenlp-4.3.2.jar"/>
-	<classpathentry kind="lib" path="C:/Users/merki/OneDrive/Documents/College/stanford-corenlp-latest/stanford-corenlp-4.3.2/stanford-corenlp-4.3.2-models.jar"/>
+	<classpathentry kind="lib" path="C:/Users/merki/OneDrive/Documents/College/lgcs124/stanford-corenlp-latest/stanford-corenlp-4.3.2/stanford-corenlp-4.3.2.jar"/>
+	<classpathentry kind="lib" path="C:/Users/merki/OneDrive/Documents/College/lgcs124/stanford-corenlp-latest/stanford-corenlp-4.3.2/stanford-corenlp-4.3.2-models.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>
